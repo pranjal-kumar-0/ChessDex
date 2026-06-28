@@ -8,8 +8,10 @@ import MoveHistory from './MoveHistory';
 import DetectorPanel from './DetectorPanel';
 import LichessContinuations from './LichessContinuations';
 import { Opening } from './OpeningSelector';
+import { Opening } from './OpeningSelector';
 import { useOpeningGuide } from './useOpeningGuide';
 import type { DetectedOpening } from '../app/api/openings/route';
+import type { Square } from 'chess.js';
 
 interface ChessBoardProps {
   mode: 'practice' | 'freeplay';
@@ -39,6 +41,8 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
       ? { name: opening.name, eco: opening.eco, moves: opening.pgn, movesBack: 0 }
       : null
   );
+
+  const [hoveredMoveUci, setHoveredMoveUci] = useState<string | null>(null);
 
   const detector = useOpeningDetector(!guidedOpening ? fenHistory : []);
 
@@ -76,8 +80,19 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
   const topBarLabel = guidedOpening ? 'Guided Mode' : 'Free Play';
   const topBarSub = guidedOpening ? guidedOpening.name : 'live detection';
 
+  // Compute custom arrows
+  const customArrows = nextExpectedMove
+    ? [{ startSquare: nextExpectedMove.from, endSquare: nextExpectedMove.to, color: 'rgba(0, 128, 0, 0.8)' }]
+    : [];
+
+  if (hoveredMoveUci && hoveredMoveUci.length >= 4) {
+    const from = hoveredMoveUci.substring(0, 2) as Square;
+    const to = hoveredMoveUci.substring(2, 4) as Square;
+    customArrows.push({ startSquare: from, endSquare: to, color: 'rgba(0, 128, 255, 0.5)' });
+  }
+
   return (
-    <div className="w-full flex flex-col gap-4" style={{ maxWidth: `${boardSize + 216 + 20}px` }}>
+    <div className="w-full flex flex-col gap-4" style={{ maxWidth: `${boardSize + 432 + 40}px` }}>
       {/* Top bar */}
       <div className="flex items-center gap-3">
         <button
@@ -131,9 +146,7 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
                 boardStyle: { width: boardSize, height: boardSize },
                 darkSquareStyle: { backgroundColor: '#b58863' },
                 lightSquareStyle: { backgroundColor: '#f0d9b5' },
-                arrows: nextExpectedMove
-                  ? [{ startSquare: nextExpectedMove.from, endSquare: nextExpectedMove.to, color: 'rgba(0, 128, 0, 0.8)' }]
-                  : [],
+                arrows: customArrows,
               }}
             />
           </div>
@@ -141,7 +154,7 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
           <PlayerRow color="w" turn={turn} />
         </div>
 
-        {/* Sidebar */}
+        {/* Right Sidebar: Openings & Continuations */}
         <div
           className="flex-shrink-0 flex flex-col rounded-xl border p-4"
           style={{
@@ -162,7 +175,7 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
                 onSelectOpening={setGuidedOpening}
               />
               <div className="mb-4 pb-4 border-b" style={{ borderColor: '#3A2818' }}>
-                <LichessContinuations fen={fen} />
+                <LichessContinuations fen={fen} onHoverMove={setHoveredMoveUci} />
               </div>
             </>
           )}
@@ -189,21 +202,28 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
                   <p className="text-xs font-semibold mb-3" style={{ color: '#4caf50' }}>
                     Opening completed!
                   </p>
-                  <LichessContinuations fen={fen} />
+                  <LichessContinuations fen={fen} onHoverMove={setHoveredMoveUci} />
                 </div>
               )}
             </div>
           )}
+        </div>
 
+        {/* Far Right Sidebar: Move History */}
+        <div
+          className="flex-shrink-0 flex flex-col rounded-xl border p-4"
+          style={{
+            width: 200,
+            height: boardSize + 64,
+            background: '#231610',
+            borderColor: '#3A2818',
+          }}
+        >
           <MoveHistory
             moves={moveHistory}
-            onUndo={undoMove}
-            onRedo={redoMove}
-            onReset={resetGame}
             turn={turn}
             inCheck={inCheck}
             isGameOver={isGameOver}
-            canRedo={canRedo}
           />
         </div>
       </div>

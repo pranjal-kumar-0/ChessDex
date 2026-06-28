@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect } from 'react';
 import { Chess } from 'chess.js';
 import type { DetectedOpening } from '../app/api/openings/route';
 import type { MoveRecord } from './useChessGame';

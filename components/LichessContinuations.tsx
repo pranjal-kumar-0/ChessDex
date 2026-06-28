@@ -17,7 +17,7 @@ interface LichessResponse {
   moves: LichessMove[];
 }
 
-export default function LichessContinuations({ fen }: { fen: string }) {
+export default function LichessContinuations({ fen, onHoverMove }: { fen: string, onHoverMove?: (uci: string | null) => void }) {
   const [data, setData] = useState<LichessResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -68,7 +68,12 @@ export default function LichessContinuations({ fen }: { fen: string }) {
         const bPct = (move.black / total) * 100;
 
         return (
-          <div key={move.san} className="flex flex-col gap-1 mb-1">
+          <div
+            key={move.san}
+            className="flex flex-col gap-1 mb-1 cursor-default p-1 rounded hover:bg-white/5 transition-colors"
+            onMouseEnter={() => onHoverMove?.(move.uci)}
+            onMouseLeave={() => onHoverMove?.(null)}
+          >
             <div className="flex justify-between items-end">
               <span className="text-sm font-medium" style={{ color: '#E1DCC9' }}>{move.san}</span>
               <span className="text-[10px]" style={{ color: '#8C7B68' }}>{total.toLocaleString()} games</span>

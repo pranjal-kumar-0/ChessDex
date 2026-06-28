@@ -5,16 +5,12 @@ import { MoveRecord } from './useChessGame';
 
 interface MoveHistoryProps {
   moves: MoveRecord[];
-  onUndo: () => void;
-  onRedo: () => void;
-  onReset: () => void;
   turn: 'w' | 'b';
   inCheck: boolean;
   isGameOver: boolean;
-  canRedo: boolean;
 }
 
-export default function MoveHistory({ moves, onUndo, onRedo, onReset, turn, inCheck, isGameOver, canRedo }: MoveHistoryProps) {
+export default function MoveHistory({ moves, turn, inCheck, isGameOver }: MoveHistoryProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -75,45 +71,7 @@ export default function MoveHistory({ moves, onUndo, onRedo, onReset, turn, inCh
       </div>
 
       {/* Buttons */}
-      <div className="flex flex-col gap-2 mt-auto">
-        {/* Undo / Redo row */}
-        <div className="flex gap-2">
-          <button
-            id="undo-move-btn"
-            onClick={onUndo}
-            disabled={moves.length === 0}
-            className="flex-1 py-2 rounded-lg text-sm font-medium border transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-            style={{ background: '#2A1D10', borderColor: '#4A3520', color: '#E1DCC9' }}
-            onMouseEnter={e => { if (moves.length > 0) e.currentTarget.style.borderColor = '#C8963C'; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = '#4A3520'; }}
-            title="Undo (Left arrow)"
-          >
-            Undo
-          </button>
-          <button
-            id="redo-move-btn"
-            onClick={onRedo}
-            disabled={!canRedo}
-            className="flex-1 py-2 rounded-lg text-sm font-medium border transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-            style={{ background: '#2A1D10', borderColor: '#4A3520', color: '#E1DCC9' }}
-            onMouseEnter={e => { if (canRedo) e.currentTarget.style.borderColor = '#C8963C'; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = '#4A3520'; }}
-            title="Redo (Right arrow)"
-          >
-            Redo
-          </button>
-        </div>
-
-        <button
-          id="reset-game-btn"
-          onClick={onReset}
-          className="w-full py-2 rounded-lg text-sm font-medium border transition-colors"
-          style={{ background: '#2A1D10', borderColor: '#4A3520', color: '#8C7B68' }}
-          onMouseEnter={e => { e.currentTarget.style.color = '#E1DCC9'; }}
-          onMouseLeave={e => { e.currentTarget.style.color = '#8C7B68'; }}
-        >
-          Reset
-        </button>
+      <div className="flex flex-col gap-2 mt-auto pt-3">
 
         {/* Key hint */}
         <p className="text-center text-xs" style={{ color: '#4A3520' }}>

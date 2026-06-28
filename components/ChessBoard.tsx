@@ -6,6 +6,7 @@ import { useChessGame } from './useChessGame';
 import { useOpeningDetector } from './useOpeningDetector';
 import MoveHistory from './MoveHistory';
 import DetectorPanel from './DetectorPanel';
+import LichessContinuations from './LichessContinuations';
 import { Opening } from './OpeningSelector';
 import { useOpeningGuide } from './useOpeningGuide';
 import type { DetectedOpening } from '../app/api/openings/route';
@@ -31,11 +32,15 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
     resetGame,
     undoMove,
     redoMove,
-  } = useChessGame(opening?.pgn);
+  } = useChessGame(); // Always start from beginning
 
-  const [guidedOpening, setGuidedOpening] = useState<DetectedOpening | null>(null);
+  const [guidedOpening, setGuidedOpening] = useState<DetectedOpening | null>(
+    mode === 'practice' && opening
+      ? { name: opening.name, eco: opening.eco, moves: opening.pgn, movesBack: 0 }
+      : null
+  );
 
-  const detector = useOpeningDetector(mode === 'freeplay' && !guidedOpening ? fenHistory : []);
+  const detector = useOpeningDetector(!guidedOpening ? fenHistory : []);
 
   const { nextExpectedMove, isCompleted } = useOpeningGuide(
     moveHistory,
@@ -68,13 +73,8 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
     return () => window.removeEventListener('keydown', onKey);
   }, [undoMove, redoMove]);
 
-  const topBarLabel = mode === 'freeplay'
-    ? (guidedOpening ? 'Guided Mode' : 'Free Play')
-    : opening?.name ?? '';
-
-  const topBarSub = mode === 'freeplay'
-    ? (guidedOpening ? guidedOpening.name : 'live detection')
-    : opening?.eco ?? '';
+  const topBarLabel = guidedOpening ? 'Guided Mode' : 'Free Play';
+  const topBarSub = guidedOpening ? guidedOpening.name : 'live detection';
 
   return (
     <div className="w-full flex flex-col gap-4" style={{ maxWidth: `${boardSize + 216 + 20}px` }}>
@@ -151,18 +151,23 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
             borderColor: '#3A2818',
           }}
         >
-          {/* Live detector — only in free play mode when not guided */}
-          {mode === 'freeplay' && !guidedOpening && (
-            <DetectorPanel
-              results={detector.results}
-              isLoading={detector.isLoading}
-              isReady={detector.isReady}
-              totalMoves={moveHistory.length}
-              onSelectOpening={setGuidedOpening}
-            />
+          {/* Live detector — shown when not guided */}
+          {!guidedOpening && (
+            <>
+              <DetectorPanel
+                results={detector.results}
+                isLoading={detector.isLoading}
+                isReady={detector.isReady}
+                totalMoves={moveHistory.length}
+                onSelectOpening={setGuidedOpening}
+              />
+              <div className="mb-4 pb-4 border-b" style={{ borderColor: '#3A2818' }}>
+                <LichessContinuations fen={fen} />
+              </div>
+            </>
           )}
 
-          {mode === 'freeplay' && guidedOpening && (
+          {guidedOpening && (
             <div className="mb-4 pb-4 border-b" style={{ borderColor: '#3A2818' }}>
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#C8963C' }}>
@@ -180,9 +185,12 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
                 Follow the green arrows to play the main line of <strong style={{ color: '#C8963C' }}>{guidedOpening.name}</strong>.
               </p>
               {isCompleted && (
-                <p className="text-xs mt-2 font-semibold" style={{ color: '#4caf50' }}>
-                  Opening completed!
-                </p>
+                <div className="mt-4 pt-4 border-t" style={{ borderColor: '#3A2818' }}>
+                  <p className="text-xs font-semibold mb-3" style={{ color: '#4caf50' }}>
+                    Opening completed!
+                  </p>
+                  <LichessContinuations fen={fen} />
+                </div>
               )}
             </div>
           )}

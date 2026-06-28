@@ -34,7 +34,11 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await res.json();
-    return NextResponse.json(data);
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': 'public, max-age=86400, s-maxage=86400',
+      }
+    });
   } catch (err) {
     console.error('[lichess proxy error]', err);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

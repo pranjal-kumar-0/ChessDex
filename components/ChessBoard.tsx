@@ -8,7 +8,6 @@ import MoveHistory from './MoveHistory';
 import DetectorPanel from './DetectorPanel';
 import LichessContinuations from './LichessContinuations';
 import { Opening } from './OpeningSelector';
-import { Opening } from './OpeningSelector';
 import { useOpeningGuide } from './useOpeningGuide';
 import type { DetectedOpening } from '../app/api/openings/route';
 import type { Square } from 'chess.js';
@@ -28,10 +27,9 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
     isGameOver,
     turn,
     inCheck,
-    canRedo,
     onSquareClick,
     onPieceDrop,
-    resetGame,
+    playMoveUci,
     undoMove,
     redoMove,
   } = useChessGame(); // Always start from beginning
@@ -78,7 +76,7 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
   }, [undoMove, redoMove]);
 
   const topBarLabel = guidedOpening ? 'Guided Mode' : 'Free Play';
-  const topBarSub = guidedOpening ? guidedOpening.name : 'live detection';
+  const topBarSub = guidedOpening ? guidedOpening.name : '';
 
   // Compute custom arrows
   const customArrows = nextExpectedMove
@@ -174,8 +172,8 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
                 totalMoves={moveHistory.length}
                 onSelectOpening={setGuidedOpening}
               />
-              <div className="mb-4 pb-4 border-b" style={{ borderColor: '#3A2818' }}>
-                <LichessContinuations fen={fen} onHoverMove={setHoveredMoveUci} />
+              <div className="mb-4 pb-4 border-b flex-1 overflow-y-auto" style={{ borderColor: '#3A2818', scrollbarWidth: 'none' }}>
+                <LichessContinuations fen={fen} onHoverMove={setHoveredMoveUci} onSelectMove={playMoveUci} />
               </div>
             </>
           )}
@@ -202,7 +200,9 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
                   <p className="text-xs font-semibold mb-3" style={{ color: '#4caf50' }}>
                     Opening completed!
                   </p>
-                  <LichessContinuations fen={fen} onHoverMove={setHoveredMoveUci} />
+                  <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+                    <LichessContinuations fen={fen} onHoverMove={setHoveredMoveUci} onSelectMove={playMoveUci} />
+                  </div>
                 </div>
               )}
             </div>

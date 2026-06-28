@@ -117,6 +117,21 @@ export function useChessGame(initialPgn?: string) {
     setOptionSquares({} as Record<Square, React.CSSProperties>);
   }, []);
 
+  const playMoveUci = useCallback((uci: string) => {
+    const game = chessRef.current;
+    try {
+      const from = uci.substring(0, 2) as Square;
+      const to = uci.substring(2, 4) as Square;
+      const promotion = uci.length > 4 ? uci[4] : undefined;
+      game.move({ from, to, promotion });
+      redoStack.current = [];
+      syncState();
+      clearMoveSelection();
+    } catch (e) {
+      console.error("Invalid move", uci, e);
+    }
+  }, [syncState, clearMoveSelection]);
+
   const onSquareClick = useCallback(
     ({ square, piece }: SquareHandlerArgs) => {
       const game = chessRef.current;
@@ -225,6 +240,7 @@ export function useChessGame(initialPgn?: string) {
     canRedo,
     onSquareClick,
     onPieceDrop,
+    playMoveUci,
     resetGame,
     undoMove,
     redoMove,

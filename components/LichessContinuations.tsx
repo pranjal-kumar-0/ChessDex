@@ -17,7 +17,7 @@ interface LichessResponse {
   moves: LichessMove[];
 }
 
-export default function LichessContinuations({ fen, onHoverMove }: { fen: string, onHoverMove?: (uci: string | null) => void }) {
+export default function LichessContinuations({ fen, onHoverMove, onSelectMove }: { fen: string, onHoverMove?: (uci: string | null) => void, onSelectMove?: (uci: string) => void }) {
   const [data, setData] = useState<LichessResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -70,9 +70,10 @@ export default function LichessContinuations({ fen, onHoverMove }: { fen: string
         return (
           <div
             key={move.san}
-            className="flex flex-col gap-1 mb-1 cursor-default p-1 rounded hover:bg-white/5 transition-colors"
+            className="flex flex-col gap-1 mb-1 p-1 rounded hover:bg-white/5 transition-colors cursor-pointer"
             onMouseEnter={() => onHoverMove?.(move.uci)}
             onMouseLeave={() => onHoverMove?.(null)}
+            onClick={() => onSelectMove?.(move.uci)}
           >
             <div className="flex justify-between items-end">
               <span className="text-sm font-medium" style={{ color: '#E1DCC9' }}>{move.san}</span>
@@ -82,7 +83,7 @@ export default function LichessContinuations({ fen, onHoverMove }: { fen: string
             <div className="h-1.5 w-full flex rounded-full overflow-hidden">
               <div style={{ width: `${wPct}%`, background: '#E1DCC9' }} title={`White wins: ${wPct.toFixed(1)}%`} />
               <div style={{ width: `${dPct}%`, background: '#8C7B68' }} title={`Draws: ${dPct.toFixed(1)}%`} />
-              <div style={{ width: `${bPct}%`, background: '#231610' }} title={`Black wins: ${bPct.toFixed(1)}%`} />
+              <div style={{ width: `${bPct}%`, background: '#4A3520' }} title={`Black wins: ${bPct.toFixed(1)}%`} />
             </div>
           </div>
         );

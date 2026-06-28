@@ -15,10 +15,11 @@ import type { Square } from 'chess.js';
 interface ChessBoardProps {
   mode: 'practice' | 'freeplay';
   opening?: Opening; 
+  playerColor?: 'white' | 'black';
   onChangeOpening: () => void;
 }
 
-export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoardProps) {
+export default function ChessBoard({ mode, opening, playerColor, onChangeOpening }: ChessBoardProps) {
   const {
     fen,
     moveHistory,
@@ -40,7 +41,9 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
   );
 
   const [hoveredMoveUci, setHoveredMoveUci] = useState<string | null>(null);
-  const [orientation, setOrientation] = useState<'white' | 'black'>('white');
+  const [orientation, setOrientation] = useState<'white' | 'black'>(mode === 'practice' && playerColor ? playerColor : 'white');
+
+  const [hasFinishedGuidedPhase, setHasFinishedGuidedPhase] = useState(false);
 
   const detectorFens = useMemo(() => (!guidedOpening ? [fen] : []), [guidedOpening, fen]);
   const detector = useOpeningDetector(detectorFens);
@@ -50,6 +53,22 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
     guidedOpening,
     () => setGuidedOpening(null) // Devated -> drop out of guided mode
   );
+
+  useEffect(() => {
+    if (isCompleted) {
+      setHasFinishedGuidedPhase(true);
+    }
+  }, [isCompleted]);
+
+  // Auto-play opponent moves in practice mode
+  useEffect(() => {
+    if (mode === 'practice' && !hasFinishedGuidedPhase && nextExpectedMove && turn !== (playerColor === 'white' ? 'w' : 'b')) {
+      const timer = setTimeout(() => {
+        playMoveUci(nextExpectedMove.uci);
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [mode, hasFinishedGuidedPhase, nextExpectedMove, turn, playerColor, playMoveUci]);
 
   // Fit board to viewport height
   const containerRef = useRef<HTMLDivElement>(null);
@@ -102,16 +121,7 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
       style={{ '--max-w': `${boardSize + 432 + 40}px` } as React.CSSProperties}
     >
       <div className="flex flex-wrap items-center gap-3 w-full">
-        <button
-          id="back-to-openings-btn"
-          onClick={onChangeOpening}
-          className="hidden lg:block text-sm font-medium px-4 py-2 rounded-lg border transition-colors"
-          style={{ background: '#2A1D10', borderColor: '#4A3520', color: '#E1DCC9' }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = '#C8963C')}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = '#4A3520')}
-        >
-          Back
-        </button>
+        
 
         <div className="hidden lg:flex items-center gap-2">
           {(opening || guidedOpening) && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: opening?.color || '#C8963C' }} />}
@@ -119,26 +129,28 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
           <span className="font-mono text-xs" style={{ color: '#8C7B68' }}>{topBarSub}</span>
         </div>
 
-        <button
-          onClick={() => setOrientation(o => o === 'white' ? 'black' : 'white')}
-          className="lg:ml-auto text-sm font-medium p-2 lg:px-3 lg:py-1.5 rounded-lg border transition-colors flex items-center justify-center gap-2"
-          style={{ background: '#2A1D10', borderColor: '#3A2818', color: '#E1DCC9' }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = '#C8963C')}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = '#3A2818')}
-          title="Flip Board"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M7 10v12" />
-            <path d="M15 14v-4" />
-            <path d="M15 14l-4-4" />
-            <path d="M15 14l4-4" />
-            <path d="M7 10l-4 4" />
-            <path d="M7 10l4 4" />
-            <path d="M3 4h18" />
-            <path d="M3 20h18" />
-          </svg>
-          <span className="hidden lg:inline">Flip Board</span>
-        </button>
+        {!(mode === 'practice' && !hasFinishedGuidedPhase) && (
+          <button
+            onClick={() => setOrientation(o => o === 'white' ? 'black' : 'white')}
+            className="lg:ml-auto text-sm font-medium p-2 lg:px-3 lg:py-1.5 rounded-lg border transition-colors flex items-center justify-center gap-2"
+            style={{ background: '#2A1D10', borderColor: '#3A2818', color: '#E1DCC9' }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = '#C8963C')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = '#3A2818')}
+            title="Flip Board"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M7 10v12" />
+              <path d="M15 14v-4" />
+              <path d="M15 14l-4-4" />
+              <path d="M15 14l4-4" />
+              <path d="M7 10l-4 4" />
+              <path d="M7 10l4 4" />
+              <path d="M3 4h18" />
+              <path d="M3 20h18" />
+            </svg>
+            <span className="hidden lg:inline">Flip Board</span>
+          </button>
+        )}
 
         {inCheck && (
           <span className="text-sm font-semibold lg:ml-3" style={{ color: '#ef4444' }}>Check!</span>

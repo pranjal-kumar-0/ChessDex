@@ -24,7 +24,7 @@ export const OPENINGS: Opening[] = [
 ];
 
 interface OpeningSelectorProps {
-  onSelect: (opening: Opening) => void;
+  onSelect: (opening: Opening, color: 'white' | 'black') => void;
   onFreePlay: () => void;
 }
 
@@ -33,6 +33,7 @@ export default function OpeningSelector({ onSelect, onFreePlay }: OpeningSelecto
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState<DetectedOpening[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedForColor, setSelectedForColor] = useState<Opening | null>(null);
   
   const abortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -75,8 +76,51 @@ export default function OpeningSelector({ onSelect, onFreePlay }: OpeningSelecto
 
   return (
     <div className="w-full max-w-xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-1" style={{ color: '#E1DCC9' }}>
+      {selectedForColor ? (
+        <div className="flex flex-col w-full animate-in fade-in zoom-in-95 duration-300">
+          <div className="text-center mb-8">
+             <h2 className="text-3xl font-bold mb-2 text-[#E1DCC9] drop-shadow-md">{selectedForColor.name}</h2>
+             <p className="text-sm font-mono text-[#8C7B68]">{selectedForColor.description}</p>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row w-full rounded-2xl overflow-hidden border border-[#3A2818] shadow-2xl relative min-h-[300px]">
+            {/* VS Badge in the center */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 bg-[#2A1D10] text-[#E1DCC9] w-12 h-12 flex items-center justify-center rounded-full font-bold text-lg border-4 border-[#1F150C] shadow-lg">
+               VS
+            </div>
+
+            {/* White Side */}
+            <button 
+              onClick={() => onSelect(selectedForColor, 'white')}
+              className="group flex-1 flex flex-col items-center justify-center p-8 bg-[#E1DCC9] hover:bg-[#F3EFE0] transition-all duration-300 relative overflow-hidden border-b sm:border-b-0 sm:border-r border-[#3A2818]"
+            >
+               <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+               <div className="w-20 h-20 mb-4 bg-contain bg-no-repeat bg-center drop-shadow-md" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 45 45\'%3E%3Cpath d=\'M22.5 11.63V6M20 8h5\' stroke=\'%23000\' stroke-width=\'1.5\' stroke-linecap=\'round\'/%3E%3Cpath d=\'M22.5 25c0-10.31-7.2-12.75-7.2-12.75b10.45 10.45 0 0 0-4.05-2.25C13.24 9.4 15.68 7 15.68 7s4.11 3.2 10.82 3.2c6.71 0 10.82-3.2 10.82-3.2s2.44 2.4-4.43 3c-1.35.12-2.9.5-4.05 2.25 0 0-7.2 2.44-7.2 12.75z\' fill=\'%23fff\' stroke=\'%23000\' stroke-width=\'1.5\' stroke-linejoin=\'round\'/%3E%3Cpath d=\'M11.5 37c5.5 0 16.5 0 22 0M11.5 33c5.5 0 16.5 0 22 0M11.5 37l-1-4M33.5 37l1-4\' stroke=\'%23000\' stroke-width=\'1.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/%3E%3Cpath d=\'M12.5 33c-1.5-1.5-3-2.5-3-6 0-3.5 2.5-5 5-5 1.5 0 3 .5 4 1 0 0 1.5 3 4 3 2.5 0 4-3 4-3 1-.5 2.5-1 4-1 2.5 0 5 1.5 5 5 0 3.5-1.5 4.5-3 6\' fill=\'%23fff\' stroke=\'%23000\' stroke-width=\'1.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/%3E%3C/svg%3E")' }} />
+               <span className="text-xl font-bold text-[#1F150C] group-hover:scale-105 transition-transform">Play as White</span>
+            </button>
+
+            {/* Black Side */}
+            <button 
+              onClick={() => onSelect(selectedForColor, 'black')}
+              className="group flex-1 flex flex-col items-center justify-center p-8 bg-[#2A1D10] hover:bg-[#3A2818] transition-all duration-300 relative overflow-hidden"
+            >
+               <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+               <div className="w-20 h-20 mb-4 bg-contain bg-no-repeat bg-center drop-shadow-md" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 45 45\'%3E%3Cpath d=\'M22.5 11.63V6M20 8h5\' stroke=\'%23000\' stroke-width=\'1.5\' stroke-linecap=\'round\'/%3E%3Cpath d=\'M22.5 25c0-10.31-7.2-12.75-7.2-12.75b10.45 10.45 0 0 0-4.05-2.25C13.24 9.4 15.68 7 15.68 7s4.11 3.2 10.82 3.2c6.71 0 10.82-3.2 10.82-3.2s2.44 2.4-4.43 3c-1.35.12-2.9.5-4.05 2.25 0 0-7.2 2.44-7.2 12.75z\' fill=\'%23000\' stroke=\'%23000\' stroke-width=\'1.5\' stroke-linejoin=\'round\'/%3E%3Cpath d=\'M11.5 37c5.5 0 16.5 0 22 0M11.5 33c5.5 0 16.5 0 22 0M11.5 37l-1-4M33.5 37l1-4\' stroke=\'%23000\' stroke-width=\'1.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/%3E%3Cpath d=\'M12.5 33c-1.5-1.5-3-2.5-3-6 0-3.5 2.5-5 5-5 1.5 0 3 .5 4 1 0 0 1.5 3 4 3 2.5 0 4-3 4-3 1-.5 2.5-1 4-1 2.5 0 5 1.5 5 5 0 3.5-1.5 4.5-3 6\' fill=\'%23000\' stroke=\'%23000\' stroke-width=\'1.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/%3E%3Cpath d=\'M12.5 33c-1.5-1.5-3-2.5-3-6 0-3.5 2.5-5 5-5 1.5 0 3 .5 4 1 0 0 1.5 3 4 3 2.5 0 4-3 4-3 1-.5 2.5-1 4-1 2.5 0 5 1.5 5 5 0 3.5-1.5 4.5-3 6\' fill=\'none\' stroke=\'%23fff\' stroke-width=\'1.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/%3E%3Cpath d=\'M22.5 25c0-10.31-7.2-12.75-7.2-12.75b10.45 10.45 0 0 0-4.05-2.25C13.24 9.4 15.68 7 15.68 7s4.11 3.2 10.82 3.2c6.71 0 10.82-3.2 10.82-3.2s2.44 2.4-4.43 3c-1.35.12-2.9.5-4.05 2.25 0 0-7.2 2.44-7.2 12.75z\' fill=\'none\' stroke=\'%23fff\' stroke-width=\'1.5\' stroke-linejoin=\'round\'/%3E%3Cpath d=\'M11.5 37c5.5 0 16.5 0 22 0M11.5 33c5.5 0 16.5 0 22 0M11.5 37l-1-4M33.5 37l1-4\' stroke=\'%23fff\' stroke-width=\'1.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/%3E%3Cpath d=\'M22.5 11.63V6M20 8h5\' stroke=\'%23fff\' stroke-width=\'1.5\' stroke-linecap=\'round\'/%3E%3C/svg%3E")' }} />
+               <span className="text-xl font-bold text-[#E1DCC9] group-hover:scale-105 transition-transform">Play as Black</span>
+            </button>
+          </div>
+
+          <button
+            onClick={() => setSelectedForColor(null)}
+            className="mt-6 text-sm font-medium hover:underline text-[#8C7B68] hover:text-[#C8963C] mx-auto block transition-colors"
+          >
+            ← Back to openings
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold mb-1" style={{ color: '#E1DCC9' }}>
           Chess Openings
         </h1>
         <p className="text-sm" style={{ color: '#8C7B68' }}>
@@ -150,7 +194,7 @@ export default function OpeningSelector({ onSelect, onFreePlay }: OpeningSelecto
               return (
                 <button
                   key={r.name + i}
-                  onClick={() => onSelect({ id: r.name, name: r.name, eco: r.eco, color: '#C8963C', description: r.moves, pgn: r.moves })}
+                  onClick={() => setSelectedForColor({ id: r.name, name: r.name, eco: r.eco, color: '#C8963C', description: r.moves, pgn: r.moves })}
                   onMouseEnter={() => setHovered(`search-${r.name}`)}
                   onMouseLeave={() => setHovered(null)}
                   className="w-full text-left flex items-center gap-4 px-5 py-3.5 rounded-xl border transition-all duration-150 cursor-pointer"
@@ -183,7 +227,7 @@ export default function OpeningSelector({ onSelect, onFreePlay }: OpeningSelecto
               <button
                 key={opening.id}
                 id={`opening-card-${opening.id}`}
-                onClick={() => onSelect(opening)}
+                onClick={() => setSelectedForColor(opening)}
                 onMouseEnter={() => setHovered(opening.id)}
                 onMouseLeave={() => setHovered(null)}
                 className="w-full text-left flex items-center gap-4 px-5 py-3.5 rounded-xl border transition-all duration-150 cursor-pointer"
@@ -213,6 +257,8 @@ export default function OpeningSelector({ onSelect, onFreePlay }: OpeningSelecto
           })
         )}
       </div>
+        </>
+      )}
     </div>
   );
 }

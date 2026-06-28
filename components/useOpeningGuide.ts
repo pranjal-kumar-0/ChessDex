@@ -7,7 +7,7 @@ import type { MoveRecord } from './useChessGame';
 import type { Square } from 'chess.js';
 
 interface UseOpeningGuideResult {
-  nextExpectedMove: { from: Square; to: Square } | null;
+  nextExpectedMove: { from: Square; to: Square; uci: string } | null;
   isCompleted: boolean;
 }
 
@@ -48,13 +48,13 @@ export function useOpeningGuide(
     }
   }, [isDeviated, onDeviate]);
 
-  let nextExpectedMove: { from: Square; to: Square } | null = null;
+  let nextExpectedMove: { from: Square; to: Square; uci: string } | null = null;
   let isCompleted = false;
 
   if (guidedOpening && !isDeviated) {
     if (moveHistory.length < expectedMoves.length) {
       const next = expectedMoves[moveHistory.length];
-      nextExpectedMove = { from: next.from as Square, to: next.to as Square };
+      nextExpectedMove = { from: next.from as Square, to: next.to as Square, uci: next.lan };
     } else {
       isCompleted = true;
     }

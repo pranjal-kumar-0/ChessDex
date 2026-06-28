@@ -8,11 +8,12 @@ export default function Home() {
 
   return (
     <OpeningSelector
-      onSelect={(opening) => {
+      onSelect={(opening, color) => {
         const params = new URLSearchParams({
           name: opening.name,
           eco: opening.eco,
-          moves: opening.pgn || opening.description
+          moves: opening.pgn || opening.description,
+          color
         });
         router.push(`/live-board?${params.toString()}`);
       }}

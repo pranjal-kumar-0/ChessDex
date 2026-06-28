@@ -12,6 +12,8 @@ function LiveBoardInner() {
   const name = searchParams.get('name');
   const eco = searchParams.get('eco');
   const moves = searchParams.get('moves');
+  const colorStr = searchParams.get('color');
+  const playerColor = colorStr === 'black' ? 'black' : 'white';
 
   const opening: Opening | undefined = (name && eco && moves)
     ? { id: name, name, eco, color: '#C8963C', description: moves, pgn: moves }
@@ -21,6 +23,7 @@ function LiveBoardInner() {
     <ChessBoard
       mode={opening ? 'practice' : 'freeplay'}
       opening={opening}
+      playerColor={playerColor}
       onChangeOpening={() => router.push('/')}
     />
   );

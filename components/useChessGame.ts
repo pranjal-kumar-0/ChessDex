@@ -121,7 +121,17 @@ export function useChessGame(initialPgn?: string) {
     const game = chessRef.current;
     try {
       const from = uci.substring(0, 2) as Square;
-      const to = uci.substring(2, 4) as Square;
+      let to = uci.substring(2, 4) as Square;
+      
+      // Fix Lichess castling UCI formats (King to Rook) to standard (King to destination)
+      const piece = game.get(from);
+      if (piece && piece.type === 'k') {
+        if (from === 'e1' && to === 'h1') to = 'g1';
+        if (from === 'e1' && to === 'a1') to = 'c1';
+        if (from === 'e8' && to === 'h8') to = 'g8';
+        if (from === 'e8' && to === 'a8') to = 'c8';
+      }
+
       const promotion = uci.length > 4 ? uci[4] : undefined;
       game.move({ from, to, promotion });
       redoStack.current = [];

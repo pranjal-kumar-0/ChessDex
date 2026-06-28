@@ -86,18 +86,26 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
 
   if (hoveredMoveUci && hoveredMoveUci.length >= 4) {
     const from = hoveredMoveUci.substring(0, 2) as Square;
-    const to = hoveredMoveUci.substring(2, 4) as Square;
+    let to = hoveredMoveUci.substring(2, 4) as Square;
+
+    if (from === 'e1' && to === 'h1') to = 'g1';
+    if (from === 'e1' && to === 'a1') to = 'c1';
+    if (from === 'e8' && to === 'h8') to = 'g8';
+    if (from === 'e8' && to === 'a8') to = 'c8';
+
     customArrows.push({ startSquare: from, endSquare: to, color: 'rgba(0, 128, 255, 0.5)' });
   }
 
   return (
-    <div className="w-full flex flex-col gap-4" style={{ maxWidth: `${boardSize + 432 + 40}px` }}>
-      {/* Top bar */}
-      <div className="flex items-center gap-3">
+    <div
+      className="w-full flex flex-col gap-4 mx-auto lg:mx-0 lg:max-w-[var(--max-w)]"
+      style={{ '--max-w': `${boardSize + 432 + 40}px` } as React.CSSProperties}
+    >
+      <div className="flex flex-wrap items-center gap-3 w-full">
         <button
           id="back-to-openings-btn"
           onClick={onChangeOpening}
-          className="text-sm font-medium px-4 py-2 rounded-lg border transition-colors"
+          className="hidden lg:block text-sm font-medium px-4 py-2 rounded-lg border transition-colors"
           style={{ background: '#2A1D10', borderColor: '#4A3520', color: '#E1DCC9' }}
           onMouseEnter={e => (e.currentTarget.style.borderColor = '#C8963C')}
           onMouseLeave={e => (e.currentTarget.style.borderColor = '#4A3520')}
@@ -105,7 +113,7 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
           Back
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="hidden lg:flex items-center gap-2">
           {(opening || guidedOpening) && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: opening?.color || '#C8963C' }} />}
           <span className="font-semibold" style={{ color: '#E1DCC9' }}>{topBarLabel}</span>
           <span className="font-mono text-xs" style={{ color: '#8C7B68' }}>{topBarSub}</span>
@@ -113,12 +121,13 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
 
         <button
           onClick={() => setOrientation(o => o === 'white' ? 'black' : 'white')}
-          className="ml-auto text-sm font-medium px-3 py-1.5 rounded-lg border transition-colors flex items-center gap-2"
+          className="lg:ml-auto text-sm font-medium p-2 lg:px-3 lg:py-1.5 rounded-lg border transition-colors flex items-center justify-center gap-2"
           style={{ background: '#2A1D10', borderColor: '#3A2818', color: '#E1DCC9' }}
           onMouseEnter={e => (e.currentTarget.style.borderColor = '#C8963C')}
           onMouseLeave={e => (e.currentTarget.style.borderColor = '#3A2818')}
+          title="Flip Board"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M7 10v12" />
             <path d="M15 14v-4" />
             <path d="M15 14l-4-4" />
@@ -128,21 +137,21 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
             <path d="M3 4h18" />
             <path d="M3 20h18" />
           </svg>
-          Flip Board
+          <span className="hidden lg:inline">Flip Board</span>
         </button>
 
         {inCheck && (
-          <span className="ml-3 text-sm font-semibold" style={{ color: '#ef4444' }}>Check!</span>
+          <span className="text-sm font-semibold lg:ml-3" style={{ color: '#ef4444' }}>Check!</span>
         )}
         {isGameOver && (
-          <span className="ml-3 text-sm font-semibold" style={{ color: '#C8963C' }}>Game over</span>
+          <span className="text-sm font-semibold lg:ml-3" style={{ color: '#C8963C' }}>Game over</span>
         )}
       </div>
 
       {/* Board + sidebar */}
-      <div className="flex gap-4 items-start">
+      <div className="flex flex-col lg:flex-row gap-4 items-center lg:items-start w-full">
         {/* Board column */}
-        <div ref={containerRef} className="flex flex-col gap-2 flex-1 min-w-0">
+        <div ref={containerRef} className="flex flex-col gap-2 w-full lg:flex-1 min-w-0 max-w-[560px] lg:max-w-none items-center lg:items-stretch">
           <PlayerRow color={orientation === 'white' ? 'b' : 'w'} turn={turn} />
 
           <div
@@ -176,13 +185,12 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
 
         {/* Right Sidebar: Openings & Continuations */}
         <div
-          className="flex-shrink-0 flex flex-col rounded-xl border p-4"
+          className="flex-shrink-0 flex flex-col rounded-xl border p-4 w-full lg:w-[200px] h-auto lg:h-[var(--board-height)] min-h-[250px]"
           style={{
-            width: 200,
-            height: boardSize + 64,
+            '--board-height': `${boardSize + 64}px`,
             background: '#231610',
             borderColor: '#3A2818',
-          }}
+          } as React.CSSProperties}
         >
           {/* Live detector — shown when not guided */}
           {!guidedOpening && (
@@ -232,13 +240,12 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
 
         {/* Far Right Sidebar: Move History */}
         <div
-          className="flex-shrink-0 flex flex-col rounded-xl border p-4"
+          className="flex-shrink-0 flex flex-col rounded-xl border p-4 w-full lg:w-[200px] h-auto lg:h-[var(--board-height)] min-h-[250px]"
           style={{
-            width: 200,
-            height: boardSize + 64,
+            '--board-height': `${boardSize + 64}px`,
             background: '#231610',
             borderColor: '#3A2818',
-          }}
+          } as React.CSSProperties}
         >
           <MoveHistory
             moves={moveHistory}

@@ -15,7 +15,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="min-h-screen flex flex-col" style={{ background: "#1F150C", color: "#E1DCC9" }}>
         <header
-          className="flex items-center gap-3 px-8 py-5 border-b"
+          className="flex items-center gap-3 px-4 py-3 lg:px-8 lg:py-5 border-b"
           style={{ borderColor: '#3A2818' }}
         >
           <Link href="/" className="flex items-center gap-3 cursor-pointer">
@@ -25,7 +25,7 @@ export default function RootLayout({
             </span>
           </Link>
         </header>
-        <main className="flex-1 flex justify-center px-6 py-10">
+        <main className="flex-1 flex justify-center px-2 py-4 lg:px-6 lg:py-10">
           {children}
         </main>
       </body>

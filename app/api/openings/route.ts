@@ -3,7 +3,6 @@ import { openingBook, findOpening, getPositionBook } from '@chess-openings/eco.j
 import type { OpeningCollection } from '@chess-openings/eco.json';
 import type { PositionBook } from '@chess-openings/eco.json';
 
-// Module-level singleton — survives across requests in the same server process
 let bookCache: OpeningCollection | null = null;
 let posBookCache: PositionBook | null = null;
 let loadingPromise: Promise<void> | null = null;
@@ -13,7 +12,6 @@ async function getBook(): Promise<{ book: OpeningCollection; posBook: PositionBo
     return { book: bookCache, posBook: posBookCache };
   }
 
-  // Prevent parallel loads if multiple requests arrive before cache is warm
   if (!loadingPromise) {
     loadingPromise = openingBook().then((book) => {
       bookCache = book;
@@ -30,7 +28,7 @@ export interface DetectedOpening {
   name: string;
   eco: string;
   moves: string;
-  movesBack: number; // 0 = exact match at current position, N = had to walk back N plies
+  movesBack: number; 
 }
 
 export async function POST(req: NextRequest) {
@@ -47,7 +45,6 @@ export async function POST(req: NextRequest) {
     const results: DetectedOpening[] = [];
     const seen = new Set<string>();
 
-    // Walk from most recent FEN backwards, collect unique opening matches
     for (let i = fens.length - 1; i >= 0; i--) {
       const fen = fens[i];
       const movesBack = fens.length - 1 - i;
@@ -62,7 +59,6 @@ export async function POST(req: NextRequest) {
           movesBack,
         });
 
-        // Return at most 4 matches (most recent first)
         if (results.length >= 4) break;
       }
     }
@@ -99,7 +95,6 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Sort shortest openings first (often the main root)
     results.sort((a, b) => a.moves.length - b.moves.length);
 
     return NextResponse.json({ results });

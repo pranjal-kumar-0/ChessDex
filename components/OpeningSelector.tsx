@@ -84,7 +84,6 @@ export default function OpeningSelector({ onSelect, onFreePlay }: OpeningSelecto
         </p>
       </div>
 
-      {/* Free play button */}
       <button
         id="free-play-btn"
         onClick={onFreePlay}
@@ -102,12 +101,9 @@ export default function OpeningSelector({ onSelect, onFreePlay }: OpeningSelecto
             Free Play
           </span>
           <span className="text-sm block mt-0.5" style={{ color: '#8C7B68' }}>
-            Play freely and detect your opening live
+            Detect the opening and improvise
           </span>
         </div>
-        <span className="text-xs font-mono flex-shrink-0" style={{ color: '#C8963C' }}>
-          detect
-        </span>
       </button>
 
       {/* Search Input */}

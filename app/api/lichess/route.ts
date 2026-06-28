@@ -17,7 +17,6 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // We use the player database to get low-elo traps/blunders as requested
     const url = `https://explorer.lichess.org/lichess?fen=${encodeURIComponent(fen)}&speeds=blitz,rapid,classical&ratings=1400,1600,1800,2000`;
 
     const res = await fetch(url, {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useMemo } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { useChessGame } from './useChessGame';
 import { useOpeningDetector } from './useOpeningDetector';
@@ -14,7 +14,7 @@ import type { Square } from 'chess.js';
 
 interface ChessBoardProps {
   mode: 'practice' | 'freeplay';
-  opening?: Opening; // only in practice mode
+  opening?: Opening; 
   onChangeOpening: () => void;
 }
 
@@ -22,7 +22,6 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
   const {
     fen,
     moveHistory,
-    fenHistory,
     squareStyles,
     isGameOver,
     turn,
@@ -41,8 +40,10 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
   );
 
   const [hoveredMoveUci, setHoveredMoveUci] = useState<string | null>(null);
+  const [orientation, setOrientation] = useState<'white' | 'black'>('white');
 
-  const detector = useOpeningDetector(!guidedOpening ? fenHistory : []);
+  const detectorFens = useMemo(() => (!guidedOpening ? [fen] : []), [guidedOpening, fen]);
+  const detector = useOpeningDetector(detectorFens);
 
   const { nextExpectedMove, isCompleted } = useOpeningGuide(
     moveHistory,
@@ -110,11 +111,31 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
           <span className="font-mono text-xs" style={{ color: '#8C7B68' }}>{topBarSub}</span>
         </div>
 
+        <button
+          onClick={() => setOrientation(o => o === 'white' ? 'black' : 'white')}
+          className="ml-auto text-sm font-medium px-3 py-1.5 rounded-lg border transition-colors flex items-center gap-2"
+          style={{ background: '#2A1D10', borderColor: '#3A2818', color: '#E1DCC9' }}
+          onMouseEnter={e => (e.currentTarget.style.borderColor = '#C8963C')}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = '#3A2818')}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M7 10v12" />
+            <path d="M15 14v-4" />
+            <path d="M15 14l-4-4" />
+            <path d="M15 14l4-4" />
+            <path d="M7 10l-4 4" />
+            <path d="M7 10l4 4" />
+            <path d="M3 4h18" />
+            <path d="M3 20h18" />
+          </svg>
+          Flip Board
+        </button>
+
         {inCheck && (
-          <span className="ml-auto text-sm font-semibold" style={{ color: '#ef4444' }}>Check!</span>
+          <span className="ml-3 text-sm font-semibold" style={{ color: '#ef4444' }}>Check!</span>
         )}
         {isGameOver && (
-          <span className="ml-auto text-sm font-semibold" style={{ color: '#C8963C' }}>Game over</span>
+          <span className="ml-3 text-sm font-semibold" style={{ color: '#C8963C' }}>Game over</span>
         )}
       </div>
 
@@ -122,7 +143,7 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
       <div className="flex gap-4 items-start">
         {/* Board column */}
         <div ref={containerRef} className="flex flex-col gap-2 flex-1 min-w-0">
-          <PlayerRow color="b" turn={turn} />
+          <PlayerRow color={orientation === 'white' ? 'b' : 'w'} turn={turn} />
 
           <div
             style={{
@@ -144,12 +165,13 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
                 boardStyle: { width: boardSize, height: boardSize },
                 darkSquareStyle: { backgroundColor: '#b58863' },
                 lightSquareStyle: { backgroundColor: '#f0d9b5' },
+                boardOrientation: orientation,
                 arrows: customArrows,
               }}
             />
           </div>
 
-          <PlayerRow color="w" turn={turn} />
+          <PlayerRow color={orientation === 'white' ? 'w' : 'b'} turn={turn} />
         </div>
 
         {/* Right Sidebar: Openings & Continuations */}
@@ -170,7 +192,6 @@ export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoar
                 isLoading={detector.isLoading}
                 isReady={detector.isReady}
                 totalMoves={moveHistory.length}
-                onSelectOpening={setGuidedOpening}
               />
               <div className="mb-4 pb-4 border-b flex-1 overflow-y-auto" style={{ borderColor: '#3A2818', scrollbarWidth: 'none' }}>
                 <LichessContinuations fen={fen} onHoverMove={setHoveredMoveUci} onSelectMove={playMoveUci} />

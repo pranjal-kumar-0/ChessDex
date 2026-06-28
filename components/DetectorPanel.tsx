@@ -7,10 +7,9 @@ interface DetectorPanelProps {
   isLoading: boolean;
   isReady: boolean;
   totalMoves: number;
-  onSelectOpening?: (opening: DetectedOpening) => void;
 }
 
-export default function DetectorPanel({ results, isLoading, isReady, totalMoves, onSelectOpening }: DetectorPanelProps) {
+export default function DetectorPanel({ results, isLoading, isReady, totalMoves }: DetectorPanelProps) {
   const countMoves = (movesStr: string) => {
     return movesStr.split(' ').filter(token => !token.includes('.')).length;
   };
@@ -36,16 +35,15 @@ export default function DetectorPanel({ results, isLoading, isReady, totalMoves,
         <p className="text-xs" style={{ color: '#4A3520' }}>No named opening found</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {results.map((r, i) => (
-            <button
+          {results.slice(0, 1).map((r) => (
+            <div
               key={r.name}
-              onClick={() => onSelectOpening?.(r)}
-              className="flex flex-col gap-0.5 text-left rounded p-1 -ml-1 transition-colors hover:bg-white/5 cursor-pointer"
+              className="flex flex-col gap-0.5 text-left rounded p-1 -ml-1"
             >
               <div className="flex items-start justify-between gap-2 w-full">
                 <span
                   className="text-xs font-medium leading-snug"
-                  style={{ color: i === 0 ? '#E1DCC9' : '#8C7B68' }}
+                  style={{ color: '#E1DCC9' }}
                 >
                   {r.name}
                 </span>
@@ -58,12 +56,7 @@ export default function DetectorPanel({ results, isLoading, isReady, totalMoves,
                   </span>
                 </div>
               </div>
-              {r.movesBack > 0 && (
-                <span className="text-xs" style={{ color: '#4A3520' }}>
-                  left line {r.movesBack} {r.movesBack === 1 ? 'move' : 'moves'} ago
-                </span>
-              )}
-            </button>
+            </div>
           ))}
         </div>
       )}

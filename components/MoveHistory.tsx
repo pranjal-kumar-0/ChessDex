@@ -19,7 +19,6 @@ export default function MoveHistory({ moves, turn, inCheck, isGameOver }: MoveHi
     }
   }, [moves]);
 
-  // Group into pairs
   const pairs: { number: number; white?: string; black?: string }[] = [];
   for (let i = 0; i < moves.length; i++) {
     if (moves[i].color === 'w') {
@@ -30,7 +29,6 @@ export default function MoveHistory({ moves, turn, inCheck, isGameOver }: MoveHi
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* Label */}
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#8C7B68' }}>
           Moves
@@ -43,7 +41,6 @@ export default function MoveHistory({ moves, turn, inCheck, isGameOver }: MoveHi
         </span>
       </div>
 
-      {/* Move list */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 mb-3" style={{ scrollbarWidth: 'none' }}>
         {pairs.length === 0 ? (
           <p className="text-xs text-center py-8" style={{ color: '#4A3520' }}>
@@ -70,10 +67,8 @@ export default function MoveHistory({ moves, turn, inCheck, isGameOver }: MoveHi
         )}
       </div>
 
-      {/* Buttons */}
       <div className="flex flex-col gap-2 mt-auto pt-3">
 
-        {/* Key hint */}
         <p className="text-center text-xs" style={{ color: '#4A3520' }}>
           Arrow keys to undo / redo
         </p>

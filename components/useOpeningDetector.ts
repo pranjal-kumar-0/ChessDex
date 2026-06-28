@@ -15,7 +15,7 @@ export function useOpeningDetector(fenHistory: string[]): UseOpeningDetectorResu
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const isReady = fenHistory.length >= 2;
+  const isReady = fenHistory.length > 0;
 
   useEffect(() => {
     if (!isReady) {

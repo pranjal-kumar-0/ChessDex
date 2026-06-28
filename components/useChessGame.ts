@@ -18,13 +18,36 @@ interface RedoEntry {
   promotion?: string;
 }
 
-export function useChessGame() {
-  const chessRef = useRef(new Chess());
+export function useChessGame(initialPgn?: string) {
+  const makeInitialChess = () => {
+    const c = new Chess();
+    if (initialPgn) {
+      try { c.loadPgn(initialPgn); } catch { /* invalid pgn */ }
+    }
+    return c;
+  };
+
+  const [initialState] = useState(() => {
+    const c = makeInitialChess();
+    return {
+      chess: c,
+      fen: c.fen(),
+      isGameOver: c.isGameOver(),
+      turn: c.turn() as 'w' | 'b',
+      inCheck: c.inCheck()
+    };
+  });
+
+  const chessRef = useRef<Chess>(initialState.chess);
   const redoStack = useRef<RedoEntry[]>([]);
 
-  const [fen, setFen] = useState(chessRef.current.fen());
+  const [fen, setFen] = useState(initialState.fen);
   const [moveHistory, setMoveHistory] = useState<MoveRecord[]>([]);
+  const [fenHistory, setFenHistory] = useState<string[]>([]);
   const [canRedo, setCanRedo] = useState(false);
+  const [isGameOver, setIsGameOver] = useState(initialState.isGameOver);
+  const [turn, setTurn] = useState<'w' | 'b'>(initialState.turn);
+  const [inCheck, setInCheck] = useState(initialState.inCheck);
   
   const [moveFrom, setMoveFrom] = useState<Square | ''>(''); 
   
@@ -34,6 +57,9 @@ export function useChessGame() {
   const syncState = useCallback(() => {
     const game = chessRef.current;
     setFen(game.fen());
+    setIsGameOver(game.isGameOver());
+    setTurn(game.turn() as 'w' | 'b');
+    setInCheck(game.inCheck());
     setCanRedo(redoStack.current.length > 0);
 
     const history = game.history({ verbose: true });
@@ -45,6 +71,7 @@ export function useChessGame() {
       number: Math.floor(i / 2) + 1,
     }));
     setMoveHistory(records);
+    setFenHistory(history.map((m) => m.after));
 
     if (history.length > 0) {
       const last = history[history.length - 1];
@@ -171,24 +198,26 @@ export function useChessGame() {
   }, [syncState, clearMoveSelection]);
 
   const resetGame = useCallback(() => {
-    chessRef.current = new Chess();
+    chessRef.current = makeInitialChess();
     redoStack.current = [];
     setFen(chessRef.current.fen());
+    setIsGameOver(chessRef.current.isGameOver());
+    setTurn(chessRef.current.turn() as 'w' | 'b');
+    setInCheck(chessRef.current.inCheck());
     setMoveHistory([]);
+    setFenHistory([]);
     setCanRedo(false);
     clearMoveSelection();
     setLastMoveSquares({} as Record<Square, React.CSSProperties>);
-  }, [clearMoveSelection]);
-
-  const isGameOver = chessRef.current.isGameOver();
-  const turn = chessRef.current.turn() as 'w' | 'b';
-  const inCheck = chessRef.current.inCheck();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clearMoveSelection, initialPgn]);
 
   const squareStyles: Record<Square, React.CSSProperties> = { ...lastMoveSquares, ...optionSquares };
 
   return {
     fen,
     moveHistory,
+    fenHistory,
     squareStyles,
     isGameOver,
     turn,

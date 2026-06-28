@@ -3,18 +3,24 @@
 import { useRef, useEffect, useState } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { useChessGame } from './useChessGame';
+import { useOpeningDetector } from './useOpeningDetector';
 import MoveHistory from './MoveHistory';
+import DetectorPanel from './DetectorPanel';
 import { Opening } from './OpeningSelector';
+import { useOpeningGuide } from './useOpeningGuide';
+import type { DetectedOpening } from '../app/api/openings/route';
 
 interface ChessBoardProps {
-  opening: Opening;
+  mode: 'practice' | 'freeplay';
+  opening?: Opening; // only in practice mode
   onChangeOpening: () => void;
 }
 
-export default function ChessBoard({ opening, onChangeOpening }: ChessBoardProps) {
+export default function ChessBoard({ mode, opening, onChangeOpening }: ChessBoardProps) {
   const {
     fen,
     moveHistory,
+    fenHistory,
     squareStyles,
     isGameOver,
     turn,
@@ -25,9 +31,19 @@ export default function ChessBoard({ opening, onChangeOpening }: ChessBoardProps
     resetGame,
     undoMove,
     redoMove,
-  } = useChessGame();
+  } = useChessGame(opening?.pgn);
 
-  // Fit the board to available vertical space
+  const [guidedOpening, setGuidedOpening] = useState<DetectedOpening | null>(null);
+
+  const detector = useOpeningDetector(mode === 'freeplay' && !guidedOpening ? fenHistory : []);
+
+  const { nextExpectedMove, isCompleted } = useOpeningGuide(
+    moveHistory,
+    guidedOpening,
+    () => setGuidedOpening(null) // Devated -> drop out of guided mode
+  );
+
+  // Fit board to viewport height
   const containerRef = useRef<HTMLDivElement>(null);
   const [boardSize, setBoardSize] = useState(460);
 
@@ -42,7 +58,7 @@ export default function ChessBoard({ opening, onChangeOpening }: ChessBoardProps
     return () => window.removeEventListener('resize', calc);
   }, []);
 
-  // Arrow key undo/redo
+  // Arrow keys: undo / redo
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') { e.preventDefault(); undoMove(); }
@@ -52,19 +68,23 @@ export default function ChessBoard({ opening, onChangeOpening }: ChessBoardProps
     return () => window.removeEventListener('keydown', onKey);
   }, [undoMove, redoMove]);
 
+  const topBarLabel = mode === 'freeplay'
+    ? (guidedOpening ? 'Guided Mode' : 'Free Play')
+    : opening?.name ?? '';
+
+  const topBarSub = mode === 'freeplay'
+    ? (guidedOpening ? guidedOpening.name : 'live detection')
+    : opening?.eco ?? '';
+
   return (
-    <div className="w-full flex flex-col gap-4" style={{ maxWidth: `${boardSize + 220 + 20}px` }}>
+    <div className="w-full flex flex-col gap-4" style={{ maxWidth: `${boardSize + 216 + 20}px` }}>
       {/* Top bar */}
       <div className="flex items-center gap-3">
         <button
           id="back-to-openings-btn"
           onClick={onChangeOpening}
           className="text-sm font-medium px-4 py-2 rounded-lg border transition-colors"
-          style={{
-            background: '#2A1D10',
-            borderColor: '#4A3520',
-            color: '#E1DCC9',
-          }}
+          style={{ background: '#2A1D10', borderColor: '#4A3520', color: '#E1DCC9' }}
           onMouseEnter={e => (e.currentTarget.style.borderColor = '#C8963C')}
           onMouseLeave={e => (e.currentTarget.style.borderColor = '#4A3520')}
         >
@@ -72,24 +92,20 @@ export default function ChessBoard({ opening, onChangeOpening }: ChessBoardProps
         </button>
 
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: opening.color }} />
-          <span className="font-semibold" style={{ color: '#E1DCC9' }}>{opening.name}</span>
-          <span className="font-mono text-xs" style={{ color: '#8C7B68' }}>{opening.eco}</span>
+          {(opening || guidedOpening) && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: opening?.color || '#C8963C' }} />}
+          <span className="font-semibold" style={{ color: '#E1DCC9' }}>{topBarLabel}</span>
+          <span className="font-mono text-xs" style={{ color: '#8C7B68' }}>{topBarSub}</span>
         </div>
 
         {inCheck && (
-          <span className="ml-auto text-sm font-semibold" style={{ color: '#ef4444' }}>
-            Check!
-          </span>
+          <span className="ml-auto text-sm font-semibold" style={{ color: '#ef4444' }}>Check!</span>
         )}
         {isGameOver && (
-          <span className="ml-auto text-sm font-semibold" style={{ color: '#C8963C' }}>
-            Game over
-          </span>
+          <span className="ml-auto text-sm font-semibold" style={{ color: '#C8963C' }}>Game over</span>
         )}
       </div>
 
-      {/* Board + sidebar row */}
+      {/* Board + sidebar */}
       <div className="flex gap-4 items-start">
         {/* Board column */}
         <div ref={containerRef} className="flex flex-col gap-2 flex-1 min-w-0">
@@ -109,12 +125,15 @@ export default function ChessBoard({ opening, onChangeOpening }: ChessBoardProps
               options={{
                 id: 'opening-study-board',
                 position: fen,
-                onPieceDrop,
-                onSquareClick,
-                squareStyles,
+                onPieceDrop: onPieceDrop,
+                onSquareClick: onSquareClick,
+                squareStyles: squareStyles,
                 boardStyle: { width: boardSize, height: boardSize },
                 darkSquareStyle: { backgroundColor: '#b58863' },
                 lightSquareStyle: { backgroundColor: '#f0d9b5' },
+                arrows: nextExpectedMove
+                  ? [{ startSquare: nextExpectedMove.from, endSquare: nextExpectedMove.to, color: 'rgba(0, 128, 0, 0.8)' }]
+                  : [],
               }}
             />
           </div>
@@ -127,11 +146,47 @@ export default function ChessBoard({ opening, onChangeOpening }: ChessBoardProps
           className="flex-shrink-0 flex flex-col rounded-xl border p-4"
           style={{
             width: 200,
-            height: boardSize + 64, // match board + player rows
+            height: boardSize + 64,
             background: '#231610',
             borderColor: '#3A2818',
           }}
         >
+          {/* Live detector — only in free play mode when not guided */}
+          {mode === 'freeplay' && !guidedOpening && (
+            <DetectorPanel
+              results={detector.results}
+              isLoading={detector.isLoading}
+              isReady={detector.isReady}
+              totalMoves={moveHistory.length}
+              onSelectOpening={setGuidedOpening}
+            />
+          )}
+
+          {mode === 'freeplay' && guidedOpening && (
+            <div className="mb-4 pb-4 border-b" style={{ borderColor: '#3A2818' }}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#C8963C' }}>
+                  Guided Mode
+                </span>
+                <button
+                  onClick={() => setGuidedOpening(null)}
+                  className="text-xs hover:underline"
+                  style={{ color: '#8C7B68' }}
+                >
+                  cancel
+                </button>
+              </div>
+              <p className="text-xs leading-relaxed" style={{ color: '#E1DCC9' }}>
+                Follow the green arrows to play the main line of <strong style={{ color: '#C8963C' }}>{guidedOpening.name}</strong>.
+              </p>
+              {isCompleted && (
+                <p className="text-xs mt-2 font-semibold" style={{ color: '#4caf50' }}>
+                  Opening completed!
+                </p>
+              )}
+            </div>
+          )}
+
           <MoveHistory
             moves={moveHistory}
             onUndo={undoMove}
@@ -151,22 +206,14 @@ export default function ChessBoard({ opening, onChangeOpening }: ChessBoardProps
 function PlayerRow({ color, turn }: { color: 'w' | 'b'; turn: 'w' | 'b' }) {
   const isActive = turn === color;
   const label = color === 'w' ? 'White' : 'Black';
-
   return (
     <div className="flex items-center gap-2 px-1">
       <div
         className="w-3.5 h-3.5 rounded-full border"
-        style={{
-          backgroundColor: color === 'w' ? '#E1DCC9' : '#1F150C',
-          borderColor: '#8C7B68',
-        }}
+        style={{ backgroundColor: color === 'w' ? '#E1DCC9' : '#1F150C', borderColor: '#8C7B68' }}
       />
       <span className="text-sm font-medium" style={{ color: '#E1DCC9' }}>{label}</span>
-      {isActive && (
-        <span className="ml-auto text-xs" style={{ color: '#C8963C' }}>
-          to move
-        </span>
-      )}
+      {isActive && <span className="ml-auto text-xs" style={{ color: '#C8963C' }}>to move</span>}
     </div>
   );
 }

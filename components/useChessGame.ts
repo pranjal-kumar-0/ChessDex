@@ -1,8 +1,31 @@
 'use client';
 
 import { useRef, useState, useCallback } from 'react';
-import { Chess, Square } from 'chess.js'; 
+import { Chess, Square, Move } from 'chess.js'; 
 import type { SquareHandlerArgs, PieceDropHandlerArgs } from 'react-chessboard';
+
+let moveSound: HTMLAudioElement | null = null;
+let captureSound: HTMLAudioElement | null = null;
+let checkSound: HTMLAudioElement | null = null;
+
+const playSound = (game: Chess, move: Move) => {
+  if (typeof window === 'undefined') return;
+  
+  if (!moveSound) moveSound = new Audio('/move.mp3');
+  if (!captureSound) captureSound = new Audio('/capture.mp3');
+  if (!checkSound) checkSound = new Audio('/check.mp3');
+
+  if (game.inCheck() || game.isGameOver()) {
+    checkSound.currentTime = 0;
+    checkSound.play().catch(() => {});
+  } else if (move.captured) {
+    captureSound.currentTime = 0;
+    captureSound.play().catch(() => {});
+  } else {
+    moveSound.currentTime = 0;
+    moveSound.play().catch(() => {});
+  }
+};
 
 export interface MoveRecord {
   san: string;
@@ -133,10 +156,13 @@ export function useChessGame(initialPgn?: string) {
       }
 
       const promotion = uci.length > 4 ? uci[4] : undefined;
-      game.move({ from, to, promotion });
-      redoStack.current = [];
-      syncState();
-      clearMoveSelection();
+      const m = game.move({ from, to, promotion });
+      if (m) {
+        playSound(game, m);
+        redoStack.current = [];
+        syncState();
+        clearMoveSelection();
+      }
     } catch (e) {
       console.error("Invalid move", uci, e);
     }
@@ -168,9 +194,12 @@ export function useChessGame(initialPgn?: string) {
       }
 
       try {
-        game.move({ from: moveFrom, to: currentSquare, promotion: 'q' });
-        redoStack.current = [];
-        syncState();
+        const m = game.move({ from: moveFrom, to: currentSquare, promotion: 'q' });
+        if (m) {
+          playSound(game, m);
+          redoStack.current = [];
+          syncState();
+        }
       } catch {
       }
 
@@ -184,11 +213,15 @@ export function useChessGame(initialPgn?: string) {
       if (!targetSquare) return false;
       const game = chessRef.current;
       try {
-        game.move({ from: sourceSquare as Square, to: targetSquare as Square, promotion: 'q' });
-        redoStack.current = [];
-        syncState();
-        clearMoveSelection();
-        return true;
+        const m = game.move({ from: sourceSquare as Square, to: targetSquare as Square, promotion: 'q' });
+        if (m) {
+          playSound(game, m);
+          redoStack.current = [];
+          syncState();
+          clearMoveSelection();
+          return true;
+        }
+        return false;
       } catch {
         return false;
       }
@@ -214,9 +247,12 @@ export function useChessGame(initialPgn?: string) {
     const entry = redoStack.current.pop();
     if (!entry) return;
     try {
-      chessRef.current.move({ from: entry.from, to: entry.to, promotion: entry.promotion ?? 'q' });
-      syncState();
-      clearMoveSelection();
+      const m = chessRef.current.move({ from: entry.from, to: entry.to, promotion: entry.promotion ?? 'q' });
+      if (m) {
+        playSound(chessRef.current, m);
+        syncState();
+        clearMoveSelection();
+      }
     } catch {
       // if somehow invalid, discard
     }

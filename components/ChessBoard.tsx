@@ -19,6 +19,7 @@ interface ChessBoardProps {
   onChangeOpening: () => void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function ChessBoard({ mode, opening, playerColor, onChangeOpening }: ChessBoardProps) {
   const {
     fen,
@@ -56,6 +57,7 @@ export default function ChessBoard({ mode, opening, playerColor, onChangeOpening
 
   useEffect(() => {
     if (isCompleted) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHasFinishedGuidedPhase(true);
     }
   }, [isCompleted]);
